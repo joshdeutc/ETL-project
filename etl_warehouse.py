@@ -355,7 +355,26 @@ def executer_etl_pour_date(date_str):
     
     print(f"ETL terminé pour la date: {date_str}")
 
-# Exemple d'utilisation
-if __name__ == "__main__":
-    date_a_traiter = "20240710"  # Format YYYYMMDD
-    executer_etl_pour_date(date_a_traiter)
+
+# Option 1: Process the entire year 2024
+def process_full_year():
+    # Generate all dates in 2024 (leap year, 366 days)
+    all_dates = pd.date_range(start='2024-01-01', end='2024-12-31')
+    
+    # Format dates as YYYYMMDD
+    formatted_dates = [date.strftime('%Y%m%d') for date in all_dates]
+    
+    # Count successful ETL processes
+    success_count = 0
+    
+    # Process each date
+    print(f"Starting ETL for all {len(formatted_dates)} days in 2024...")
+    for date_str in formatted_dates:
+        try:
+            print(f"\nProcessing date {date_str} ({success_count+1}/{len(formatted_dates)})")
+            executer_etl_pour_date(date_str)
+            success_count += 1
+        except Exception as e:
+            print(f"Failed to process date {date_str}: {e}")
+    
+    print(f"\nETL completed for {success_count} out of {len(formatted_dates)} days in 2024")
