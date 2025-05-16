@@ -1,96 +1,98 @@
 from distance import *
 from etl_warehouse import *
+
 list_with_no_avion = ["Compiègne"]
-from pyspark.sql import SparkSession
-# Initialiser Spark
-spark = SparkSession.builder.getOrCreate()
-spark.conf.set("spark.sql.session.timeZone", "Europe/Paris")
+geolocator = Nominatim(user_agent="mission_distance_calculator")
 
 def get_closest_city_with_avion(ville_destination):
     closest_city_with_avion = {"Compiègne": "Paris"}
-    return closest_city_with_avion.get(ville_destination, ville_destination)  # default fallback
+    return closest_city_with_avion.get(ville_destination, ville_destination)
 
-def avion_GES(ville_depart, ville_destination):
-  distance = calculate_distance(ville_depart, ville_destination)
-  if distance == None:
-    print("Distance non trouvée", ville_depart, ville_destination)
-    return 0
-  else:
+def avion_GES(ville_depart, ville_destination, aller_retour):
+    distance = calculate_distance(ville_depart, ville_destination, geolocator)
+    if distance is None:
+        return 0
     distance += 95
-  if distance < 1000:
-    facteur_emissions = 0.2586
-  elif distance < 3500:
-    facteur_emissions = 0.1875
-  else:
-    facteur_emissions = 0.152
-  GES = distance * facteur_emissions
-  return GES
+    if distance < 1000:
+        facteur_emissions = 0.2586
+    elif distance < 3500:
+        facteur_emissions = 0.1875
+    else:
+        facteur_emissions = 0.152
+    GES = distance * facteur_emissions
+    if aller_retour == "oui":
+        GES = GES * 2
 
-def taxi_GES(ville_depart, ville_destination):
-  distance = calculate_distance(ville_depart, ville_destination)
-  facteur_emissions = 0.2156 #motorisation moyenne
-  GES = distance * 1,2 * (1 + 1 / 1) * facteur_emissions
-  return GES
+    return GES
 
-def commun_GES(ville_depart, ville_destination):
-  """distance = calculate_distance(ville_depart, ville_destination)
-  list_agglo_sup_250 = ["Paris", "NewYork"]
-  list_agglo_inf_100 = ["Berlin", "London", "LosAngeles", "Shanghai"]
-  list_agglo_100_250 = ["Paris", "NewYork"]
-  if ville_depart in list_agglo_sup_250:
+def taxi_GES(ville_depart, ville_destination, aller_retour):
+    if ville_depart == ville_destination:
+        distance = 5
+    else:
+        distance = calculate_distance(ville_depart, ville_destination, geolocator)
+    facteur_emissions = 0.2156
+    GES = distance * 1.2 * 2 * facteur_emissions
+    if aller_retour == "oui":
+        GES = GES * 2
+    
+    return GES
+
+def commun_GES(ville_depart, ville_destination, aller_retour):
+    if ville_depart == ville_destination:
+        distance = 5
+    else:
+        distance = calculate_distance(ville_depart, ville_destination, geolocator)
     facteur_emissions = 0.129
-  elif ville_depart in list_agglo_inf_100:
-    facteur_emissions = 0.146
-  else:
-    facteur_emissions = 0.137"""
-  distance = calculate_distance(ville_depart, ville_destination)
-  facteur_emissions = 0.129 #agglomeration supérieur à 250k habitants
-  GES = distance * 1,5 * facteur_emissions
-  return GES
+    GES = distance * 1.5 * facteur_emissions
+    if aller_retour == "oui":
+        GES = GES * 2
 
-def train_GES(ville_depart, ville_destination):
-  distance = calculate_distance(ville_depart, ville_destination)
-  if distance :  
+    return GES
+
+def train_GES(ville_depart, ville_destination, aller_retour):
+    if ville_depart == ville_destination:
+        distance = 5
+    else :
+        distance = calculate_distance(ville_depart, ville_destination, geolocator)
     if distance < 200:
         facteur_emissions = 0.018
     else:
         facteur_emissions = 0.0033
-    GES = distance * 1,2 * facteur_emissions
+    GES = distance * 1.2 * facteur_emissions
+    if aller_retour == "oui":
+        GES = GES * 2
+
     return GES
 
 def mission_bilan_carbone(df_mission):
-    df_mission = spark.createDataFrame(df_mission)
+    import pandas as pd
     rows_with_ges = []
-    for row in df_mission.collect():
+    for _, row in df_mission.iterrows():
+        print("mission numero :", _, "faite")
         transport = row["TRANSPORT"]
         ville_depart = row["VILLE_DEPART"]
         ville_destination = row["VILLE_DESTINATION"]
+        aller_retour = row["ALLER_RETOUR"]
         GES = None
         if transport == "Avion":
             if ville_destination in list_with_no_avion:
                 ville_avion = get_closest_city_with_avion(ville_destination)
-                GES = train_GES(ville_destination, ville_avion)
-                GES =  2 * avion_GES(ville_depart, ville_avion)
+                GES = train_GES(ville_destination, ville_avion, aller_retour)
+                GES = avion_GES(ville_depart, ville_avion, aller_retour)
             else:
-              GES = avion_GES(ville_depart, ville_destination)
-
+                GES = avion_GES(ville_depart, ville_destination, aller_retour)
         elif transport == "Taxi":
-          GES = taxi_GES(ville_depart, ville_destination)
-
+            GES = taxi_GES(ville_depart, ville_destination, aller_retour)
         elif transport == "Transports en commun":
-          GES = commun_GES(ville_depart, ville_destination)
-
+            GES = commun_GES(ville_depart, ville_destination, aller_retour)
         elif transport == "Train":
-          GES = train_GES(ville_depart, ville_destination)
-
-        # Ajouter la ligne si GES a pu être calculé
+            GES = train_GES(ville_depart, ville_destination, aller_retour)
         if GES is not None:
-          GES = GES * 0.001
-          rows_with_ges.append(row + (GES,))
-
-    # Créer un nouveau DataFrame avec la colonne GES
+            GES *= 0.001
+            rows_with_ges.append({**row.to_dict(), "GES": GES})
+        else:
+            print("erreur pour row = ", row)
     if rows_with_ges:
-        new_df = spark.createDataFrame(rows_with_ges, df_mission.columns + ["GES"])
-        return new_df
+        return pd.DataFrame(rows_with_ges)
     else:
-        return None
+        return df_mission

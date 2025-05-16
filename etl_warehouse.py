@@ -1,4 +1,6 @@
+
 import os
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 import glob
 import pandas as pd
 import pytz
@@ -7,8 +9,9 @@ from pyspark.sql import SparkSession
 from materiel_ges import *
 from mission_ges import *
 # Initialiser Spark
-spark = SparkSession.builder.getOrCreate()
-spark.conf.set("spark.sql.session.timeZone", "Europe/Paris")
+
+"""spark = SparkSession.builder.getOrCreate()
+spark.conf.set("spark.sql.session.timeZone", "Europe/Paris")"""
 
 # Configuration des chemins
 SOURCE_PATH = "BDD_BGES\\BDD_BGES"
