@@ -1,4 +1,3 @@
-
 import os
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 import glob
@@ -53,15 +52,9 @@ def convertir_date_fuseau_paris(date_original, ville_source):
     return date_paris
 
 def chercher_fichiers_avec_conversion_fuseau(date_str, type_donnees):
-    """Recherche les fichiers correspondant à une date en tenant compte des fuseaux horaires"""
-    date_paris = pd.to_datetime(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}")
-    
-    # On va regarder le jour précédent et suivant pour tenir compte des fuseaux horaires
-    dates_a_verifier = [
-        (date_paris - timedelta(days=1)).strftime("%Y%m%d"),
-        date_str,
-        (date_paris + timedelta(days=1)).strftime("%Y%m%d")
-    ]
+    """Recherche les fichiers correspondant à une date exacte"""
+    # On ne considère que la date exacte spécifiée, plus les jours adjacents
+    dates_a_verifier = [date_str]
     
     fichiers_trouves = []
     
@@ -176,8 +169,8 @@ def creer_dimension_mission(df_missions):
         
         # Fusionner si de nouvelles missions existent
         if len(nouvelles_missions) > 0:
+            nouvelles_missions = mission_bilan_carbone(nouvelles_missions)
             dim_mission_maj = pd.concat([dim_mission_existante, nouvelles_missions], ignore_index=True)
-            dim_mission_maj = mission_bilan_carbone(dim_mission_maj) 
             dim_mission_maj.to_csv(dimension_mission_path, index=False)
             print(f"Table dimension MISSION mise à jour avec {len(nouvelles_missions)} nouvelles missions")
     else:
@@ -206,8 +199,8 @@ def creer_dimension_materiel(df_materiel):
         
         # Fusionner si de nouveaux matériels existent
         if len(nouveaux_materiels) > 0:
+            nouveaux_materiels = tranform_with_GES(nouveaux_materiels)
             dim_materiel_maj = pd.concat([dim_materiel_existante, nouveaux_materiels], ignore_index=True)
-            dim_materiel_maj = tranform_with_GES(dim_materiel_maj)
             dim_materiel_maj.to_csv(dimension_materiel_path, index=False)
             print(f"Table dimension MATERIEL mise à jour avec {len(nouveaux_materiels)} nouveaux matériels")
     else:
