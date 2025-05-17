@@ -42,8 +42,11 @@ def commun_GES(ville_depart, ville_destination, aller_retour):
         distance = 5
     else:
         distance = calculate_distance(ville_depart, ville_destination, geolocator)
-    facteur_emissions = 0.129
-    GES = distance * 1.5 * facteur_emissions
+    #facteur d'emission = moyenne entre Tramway > 250 000 habitants + rer + Bus > 250 000 habitants
+    facteur_emissions = 0.047
+    #coeff_multiplicateur = moyenne entre 1,2 pour le RER, 1,7 pour le métro et 1,5 pour le bus
+    coeff_multiplicateur = (1.2 + 1.7 + 1.5) / 3
+    GES = distance * coeff_multiplicateur * facteur_emissions
     if aller_retour == "oui":
         GES = GES * 2
 

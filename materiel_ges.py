@@ -17,6 +17,8 @@ def materiel_informatique_GES(type_mat, modele_mat):
         ]
         if not match.empty:
             return match.iloc[0]["Impact"]
+        else:
+            return moyenne_ges
     return None
 
 def tranform_with_GES(df_materiel):
