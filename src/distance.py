@@ -5,8 +5,9 @@ from geopy.distance import geodesic
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError
 import time
 
-DISTANCE_CACHE_FILE = "distances_cache.csv"
-COORDINATES_CACHE_FILE = "coordinates_cache.csv"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DISTANCE_CACHE_FILE = os.path.join(PROJECT_ROOT, "cache", "distances_cache.csv")
+COORDINATES_CACHE_FILE = os.path.join(PROJECT_ROOT, "cache", "coordinates_cache.csv")
 
 def calculate_distance(departure_city, destination_city, geolocator, max_retries=20):
 

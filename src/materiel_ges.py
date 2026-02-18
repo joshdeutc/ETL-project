@@ -1,8 +1,10 @@
+import os
 from pyspark.sql import functions as F
 import pandas as pd
 from etl_warehouse import *
 
-pdf_informatique = pd.read_csv('BDD_BGES/BDD_BGES/materiel_informatique_impact.csv', sep=',', encoding='utf-8')
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+pdf_informatique = pd.read_csv(os.path.join(PROJECT_ROOT, 'data', 'sources', 'BDD_BGES', 'materiel_informatique_impact.csv'), sep=',', encoding='utf-8')
 moyenne_ges = pdf_informatique["Impact"].mean()
 
 def materiel_informatique_GES(type_mat, modele_mat):

@@ -1,0 +1,8 @@
+pandas
+geopy
+streamlit
+matplotlib
+seaborn
+numpy
+pyspark
+pytz

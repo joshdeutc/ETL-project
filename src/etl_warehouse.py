@@ -13,8 +13,9 @@ from mission_ges import *
 spark.conf.set("spark.sql.session.timeZone", "Europe/Paris")"""
 
 # Configuration des chemins
-SOURCE_PATH = "BDD_BGES\\BDD_BGES"
-DW_PATH = "DATA_WAREHOUSE"  # Chemin vers le Data Warehouse
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SOURCE_PATH = os.path.join(PROJECT_ROOT, "data", "sources", "BDD_BGES")
+DW_PATH = os.path.join(PROJECT_ROOT, "data", "warehouse")
 
 # Créer les répertoires DW s'ils n'existent pas
 os.makedirs(DW_PATH, exist_ok=True)
@@ -61,9 +62,9 @@ def chercher_fichiers_avec_conversion_fuseau(date_str, type_donnees):
     for date_check in dates_a_verifier:
         for ville in FUSEAUX_VILLES.keys():
             if type_donnees == "MISSION":
-                fichier_path = f"{SOURCE_PATH}\\BDD_BGES_{ville}\\BDD_BGES_{ville}_MISSION\\MISSION_{date_check}.txt"
+                fichier_path = os.path.join(SOURCE_PATH, f"BDD_BGES_{ville}", f"BDD_BGES_{ville}_MISSION", f"MISSION_{date_check}.txt")
             else:  # MATERIEL_INFORMATIQUE
-                fichier_path = f"{SOURCE_PATH}\\BDD_BGES_{ville}\\BDD_BGES_{ville}_INFORMATIQUE\\MATERIEL_INFORMATIQUE_{date_check}.txt"
+                fichier_path = os.path.join(SOURCE_PATH, f"BDD_BGES_{ville}", f"BDD_BGES_{ville}_INFORMATIQUE", f"MATERIEL_INFORMATIQUE_{date_check}.txt")
                 
             if os.path.exists(fichier_path):
                 fichiers_trouves.append((fichier_path, ville, date_check))

@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,11 +8,14 @@ import numpy as np
 st.set_page_config(page_title="Dashboard Carbone", layout="wide")
 st.title("📊 Dashboard Carbone - Organisation (à partir de dimension_mission.csv)")
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 @st.cache_data
 def load_data():
-    df_mission = pd.read_csv("DATA_WAREHOUSE/DIM_MISSION/dimension_mission.csv", encoding='utf-8')
-    df_faits = pd.read_csv("DATA_WAREHOUSE/FAITS_MISSION/faits_mission.csv", encoding='utf-8')
-    df_dates = pd.read_csv("DATA_WAREHOUSE/DIM_DATE/dimension_date.csv", encoding='utf-8')
+    dw_path = os.path.join(PROJECT_ROOT, "data", "warehouse")
+    df_mission = pd.read_csv(os.path.join(dw_path, "DIM_MISSION", "dimension_mission.csv"), encoding='utf-8')
+    df_faits = pd.read_csv(os.path.join(dw_path, "FAITS_MISSION", "faits_mission.csv"), encoding='utf-8')
+    df_dates = pd.read_csv(os.path.join(dw_path, "DIM_DATE", "dimension_date.csv"), encoding='utf-8')
 
     df_all = df_faits.merge(df_mission, on="ID_MISSION", how="left")
     df_all = df_all.merge(df_dates, on="KeyDate", how="left")
